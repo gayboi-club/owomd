@@ -1,0 +1,8 @@
+build/
+dist/
+.venv/
+__pycache__/
+*.spec
+*.owo
+!test.md.owo
+.DS_Store

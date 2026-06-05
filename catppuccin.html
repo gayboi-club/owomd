@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&amp;display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@catppuccin/palette@1.0.0/css/catppuccin.css">
+    <style>
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--ctp-macchiato-base, #24273a);
+  color: var(--ctp-macchiato-text, #cad3f5);
+}
+h1, h2 { color: var(--ctp-macchiato-mauve, #c6a0f6); }
+a { color: var(--ctp-macchiato-pink, #f5bde6); }
+pre { background-color: var(--ctp-macchiato-mantle, #1e2030); border: 1px solid var(--ctp-macchiato-surface0, #363a4f); }
+code { font-family: monospace; color: var(--ctp-macchiato-green, #a6da95); }
+    </style>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        pre {
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        blockquote {
+            border-left: 4px solid currentColor;
+            padding-left: 1rem;
+            margin-left: 0;
+            opacity: 0.9;
+        }
+        /* Aesthetic defaults in case theme is missing something */
+        :root {
+            color-scheme: dark light;
+        }
+    </style>
+</head>
+<body class="owomd-content">
+<h1>h1</h1>
+<h2>h2</h2>
+<ul>
+<li>So yeah, this text, $HEADER_END, is treated as literal</li>
+</ul>
+<p>™</p>
+<p>🐱</p>
+<p>ä</p>
+<p>${stuff}</p>
+<p>\meow</p>
+<ul>
+<li>item 1</li>
+</ul>
+<ul>
+<li>item 2</li>
+</ul>
+<pre><code class="language-rs">
+fn main() -&gt; i32 {
+  println!(&quot;meow mrrow&quot;);
+}
+</code></pre>
+<pre><code>
+fn main() -&gt; i32 {
+  println!(&quot;meow&quot;);
+}
+</code></pre>
+<blockquote>
+<p><a href="https://amcalledglitchy.dev">Meow owo</a></p>
+</blockquote>
+</body>
+</html>

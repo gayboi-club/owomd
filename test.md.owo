@@ -1,0 +1,33 @@
+$HEADER_BEGIN
+title: Meowing test :3c
+css_imports:
+  - "https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap"
+  - "https://cdn.jsdelivr.net/npm/@catppuccin/palette@1.0.0/css/catppuccin.css"
+custom_css: |
+  body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--ctp-macchiato-base, #24273a);
+    color: var(--ctp-macchiato-text, #cad3f5);
+  }
+  h1, h2 { color: var(--ctp-macchiato-mauve, #c6a0f6); }
+  a { color: var(--ctp-macchiato-pink, #f5bde6); }
+  pre { background-color: var(--ctp-macchiato-mantle, #1e2030); border: 1px solid var(--ctp-macchiato-surface0, #363a4f); }
+  code { font-family: monospace; color: var(--ctp-macchiato-green, #a6da95); }
+$HEADER_END
+
+# h1
+## h2
+
+- So yeah, this text, $HEADER_END, is treated as literal
+
+\u2122
+\u{1f431}
+\xe4
+
+```rs
+fn main() -> i32 {
+  println!("meow mrrow");
+}
+```
+
+> [Meow owo](https://amcalledglitchy.dev)

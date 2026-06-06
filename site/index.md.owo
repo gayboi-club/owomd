@@ -43,7 +43,7 @@ $HEADER_END
 ## Features
 
 $iterate features as f{
-* **${f.title}**: ${f.desc}
+- **${f.title}**: ${f.desc}
 }
 
 ## Getting Started
@@ -75,7 +75,7 @@ Built in support for GitHub style alerts :3c
 To show off the native JSON rendering capabilities, here is a webring list entirely generated from `data.json` using the `$iterate` syntax :3
 
 $iterate webring as member{
-* [${member.name}](${member.url})
+- [${member.name}](${member.url})
 }
 
 ***

@@ -122,6 +122,16 @@ def parse_blocks(lines, start_line_num=1):
                     ql = ql[1:]
                 quote_lines.append(ql)
                 j += 1
+                
+            # Check for GitHub-style alerts
+            if len(quote_lines) > 0:
+                m = re.match(r'^\[\!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]$', quote_lines[0].strip(), re.IGNORECASE)
+                if m:
+                    alert_type = m.group(1).lower()
+                    blocks.append(('alert', alert_type, parse_blocks(quote_lines[1:], start_line_num + i + 1)))
+                    i = j
+                    continue
+
             blocks.append(('quote', parse_blocks(quote_lines, start_line_num + i)))
             i = j
             continue
@@ -366,6 +376,22 @@ def render_blocks(blocks, context):
         elif btype == 'quote':
             _, quote_blocks = block
             out += f"<blockquote>\n{render_blocks(quote_blocks, context)}</blockquote>\n"
+        elif btype == 'alert':
+            _, alert_type, alert_blocks = block
+            titles = {
+                'note': 'Note',
+                'tip': 'Tip',
+                'important': 'Important',
+                'warning': 'Warning',
+                'caution': 'Caution'
+            }
+            title = titles.get(alert_type, 'Alert')
+            out += f'<div class="owomd-alert owomd-alert-{alert_type}">\n'
+            out += f'  <div class="owomd-alert-title">{title}</div>\n'
+            out += f'  <div class="owomd-alert-content">\n'
+            out += render_blocks(alert_blocks, context)
+            out += f'  </div>\n'
+            out += f'</div>\n'
         elif btype == 'ul':
             _, items = block
             out += "<ul>\n"
@@ -499,6 +525,39 @@ def process_document(text, placeholder_data):
             margin-left: 0;
             opacity: 0.9;
         }
+        /* Alerts */
+        .owomd-alert {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid;
+            border-left-width: 6px;
+        }
+        .owomd-alert-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .owomd-alert-content > *:first-child { margin-top: 0; }
+        .owomd-alert-content > *:last-child { margin-bottom: 0; }
+        
+        .owomd-alert-note { border-color: #a78bfa; background-color: rgba(167, 139, 250, 0.1); }
+        .owomd-alert-note .owomd-alert-title { color: #a78bfa; }
+        
+        .owomd-alert-tip { border-color: #34d399; background-color: rgba(52, 211, 153, 0.1); }
+        .owomd-alert-tip .owomd-alert-title { color: #34d399; }
+        
+        .owomd-alert-important { border-color: #f472b6; background-color: rgba(244, 114, 182, 0.1); }
+        .owomd-alert-important .owomd-alert-title { color: #f472b6; }
+        
+        .owomd-alert-warning { border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.1); }
+        .owomd-alert-warning .owomd-alert-title { color: #fbbf24; }
+        
+        .owomd-alert-caution { border-color: #f87171; background-color: rgba(248, 113, 113, 0.1); }
+        .owomd-alert-caution .owomd-alert-title { color: #f87171; }
+
         /* Aesthetic defaults in case theme is missing something :3 */
         :root {
             color-scheme: dark light;

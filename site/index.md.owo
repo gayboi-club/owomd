@@ -1,0 +1,83 @@
+$HEADER_BEGIN
+title: "owomd :3"
+css_imports:
+  - "https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap"
+  - "https://cdn.jsdelivr.net/npm/@catppuccin/palette@1.0.0/css/catppuccin.css"
+custom_css: |
+  body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--ctp-macchiato-base, #24273a);
+    color: var(--ctp-macchiato-text, #cad3f5);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  a {
+    color: var(--ctp-macchiato-pink, #f5bde6);
+    text-decoration: none;
+    font-weight: bold;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  h1, h2, h3 {
+    color: var(--ctp-macchiato-mauve, #c6a0f6);
+  }
+  h1 {
+    color: var(--ctp-macchiato-pink, #f5bde6);
+    font-weight: 900;
+  }
+  img {
+    max-width: 300px;
+    margin-bottom: 2rem;
+  }
+$HEADER_END
+
+![owomd logo](owomd.png)
+
+# owomd :3
+*A custom markdown format and compiler for gays, by gays :3c.*
+
+[View on GitHub](https://github.com/gayboi-club/owomd/) :3
+
+## Features
+
+$iterate features as f{
+* **${f.title}**: ${f.desc}
+}
+
+## Getting Started
+
+You can spin up the live development server or compile files statically using the binary :3
+
+````bash
+# 1. Start the live development server
+./owomd serve . --port 8080
+
+# 2. Or statically compile a file with dynamic data
+cat data.json | ./owomd index.md.owo > index.html
+````
+
+## Beautiful Alerts
+
+Built in support for GitHub style alerts :3c
+
+> [!TIP]
+> **Pro Tip :3**
+> You can use these alerts to draw attention to important information in your documentation. They look absolutely stunning on dark mode :3
+
+> [!WARNING]
+> **Watch out :3c**
+> Using `owomd` may cause an extreme urge to turn gay >~<
+
+## Demo: Iterating Data :3
+
+To show off the native JSON rendering capabilities, here is a webring list entirely generated from `data.json` using the `$iterate` syntax :3
+
+$iterate webring as member{
+* [${member.name}](${member.url})
+}
+
+***
+gayboi.club : est. 2026 : Energyboy & Glitchy  
+made with love by [gayboi.club](https://gayboi.club) :p

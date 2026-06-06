@@ -1,0 +1,18 @@
+{
+  "features": [
+    { "title": "Zero Dependencies", "desc": "Runs natively as a single executable binary on Windows, macOS, and Linux." },
+    { "title": "Live Theming", "desc": "Import CSS natively using the HEADER block for premium aesthetics." },
+    { "title": "JSON Injection", "desc": "Pass real data through stdin and render variables dynamically." },
+    { "title": "Data Iterators", "desc": "Loop over arrays using iterate to build grids and lists with ease." },
+    { "title": "GitHub Alerts", "desc": "Built in support for stylish, premium markdown alerts." },
+    { "title": "Code Templates", "desc": "Inject variables directly into code blocks using the templating modifier." }
+  ],
+  "webring": [
+    {"name": "gayboi.club", "url": "https://gayboi.club"},
+    {"name": "Energyboy :3", "url": "https://gayboi.club/energyboy"},
+    {"name": "Glitchy :3", "url": "https://amcalledglitchy.dev"},
+    {"name": "Xargana :3", "url": "https://xargana.tr"},
+    {"name": "Qweru :3", "url": "https://qweru.xyz"},
+    {"name": "Loudsynth :3", "url": "https://loudsynth.moe"}
+  ]
+}

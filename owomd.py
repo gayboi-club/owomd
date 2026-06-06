@@ -259,61 +259,64 @@ def parse_inline(text, line_num):
             if end != -1:
                 flush_text()
                 path = text[i+2:end].strip()
-                nodes.append(('placeholder', path, line_num))
-                i = end + 1
-                continue
-                
-
-        current_text += text[i]
-        i += 1
-        
-    flush_text()
+def parse_inline(text, line_num=0):
+    pattern = re.compile(r'(!\[.*?\]\(.*?\))|(\[.*?\]\(.*?\))|(<(?:http|https|ftp)://[^>]+>)|(<\/?[a-zA-Z][^>]*>)|(\*\*.*?\*\*)|(\*.*?\*)|(_.*?_)|(`.*?`)')
     
-    # Parse markdown segments :3c
+    nodes = []
+    idx = 0
+    while idx < len(text):
+        m = pattern.search(text, idx)
+        if not m:
+            nodes.append(('text', text[idx:]))
+            break
+        if m.start() > idx:
+            nodes.append(('text', text[idx:m.start()]))
+            
+        match_str = m.group(0)
+        if match_str.startswith('![') and match_str.endswith(')'):
+            alt = match_str[2:match_str.find(']')]
+            url = match_str[match_str.find('(')+1:-1]
+            nodes.append(('image', alt, url))
+        elif match_str.startswith('[') and match_str.endswith(')'):
+            alt = match_str[1:match_str.find(']')]
+            url = match_str[match_str.find('(')+1:-1]
+            nodes.append(('link', alt, url))
+        elif match_str.startswith('<') and '://' in match_str and ' ' not in match_str:
+            url = match_str[1:-1]
+            nodes.append(('link', url, url))
+        elif match_str.startswith('<'):
+            nodes.append(('raw_html', match_str))
+        elif match_str.startswith('**'):
+            nodes.append(('bold', match_str[2:-2]))
+        elif match_str.startswith('*'):
+            nodes.append(('italic', match_str[1:-1]))
+        elif match_str.startswith('_'):
+            nodes.append(('italic', match_str[1:-1]))
+        elif match_str.startswith('`'):
+            nodes.append(('code', match_str[1:-1]))
+            
+        idx = m.end()
+
+    # Process placeholders in the text and raw_html nodes
     final_nodes = []
-    
     for node in nodes:
-        if node[0] == 'placeholder':
+        if node[0] in ('text', 'raw_html'):
+            t = node[1]
+            while True:
+                s = t.find('${')
+                if s == -1: break
+                e = t.find('}', s)
+                if e == -1: break
+                
+                if s > 0:
+                    final_nodes.append((node[0], t[:s]))
+                final_nodes.append(('placeholder', t[s+2:e].strip(), line_num))
+                t = t[e+1:]
+            if len(t) > 0:
+                final_nodes.append((node[0], t))
+        else:
             final_nodes.append(node)
-            continue
             
-
-        t = node[1]
-        pattern = re.compile(r'(!\[.*?\]\(.*?\))|(\[.*?\]\(.*?\))|(<.*?>)|(\*\*.*?\*\*)|(\*.*?\*)|(_.*?_)|(`.*?`)')
-        
-        idx = 0
-        while idx < len(t):
-            m = pattern.search(t, idx)
-            if not m:
-                final_nodes.append(('text', t[idx:]))
-                break
-            
-            if m.start() > idx:
-                final_nodes.append(('text', t[idx:m.start()]))
-                
-            match_str = m.group(0)
-            if match_str.startswith('!['):
-                alt = match_str[2:match_str.find(']')]
-                url = match_str[match_str.find('(')+1:-1]
-                final_nodes.append(('image', alt, url))
-            elif match_str.startswith('['):
-                alt = match_str[1:match_str.find(']')]
-                url = match_str[match_str.find('(')+1:-1]
-                final_nodes.append(('link', alt, url))
-            elif match_str.startswith('<'):
-                url = match_str[1:-1]
-                final_nodes.append(('link', url, url))
-            elif match_str.startswith('**'):
-                final_nodes.append(('bold', match_str[2:-2]))
-            elif match_str.startswith('*'):
-                final_nodes.append(('italic', match_str[1:-1]))
-            elif match_str.startswith('_'):
-                final_nodes.append(('underline', match_str[1:-1]))
-            elif match_str.startswith('`'):
-                final_nodes.append(('code', match_str[1:-1]))
-                
-            idx = m.end()
-
     return final_nodes
 
 def render_inline(text, context, line_num):
@@ -338,6 +341,8 @@ def render_inline(text, context, line_num):
             res += f"<a href=\"{html.escape(node[2])}\">{render_inline(node[1], context, line_num)}</a>"
         elif t == 'image':
             res += f"<img src=\"{html.escape(node[2])}\" alt=\"{html.escape(node[1])}\" />"
+        elif t == 'raw_html':
+            res += node[1]
     return res
 
 def render_blocks(blocks, context):

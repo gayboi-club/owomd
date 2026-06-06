@@ -20,15 +20,17 @@ Made with &lt;3 by [gayboi.club](https://gayboi.club)
 
 You can use `owomd` via the command line. It requires one argument: the path to your template file.
 
-### Live Web Server (On-the-fly Compilation)
-If you want to view your `.md.owo` templates as actual web pages natively in your browser, `owomd` has a built-in development HTTP server :3c
+### Production-Ready Dynamic Web Server
+If you want to serve your `.md.owo` templates as actual web pages natively in your browser, `owomd` has a built-in multi-threaded HTTP server :3c
 
 ```bash
-./owomd serve . --port 8080
+./owomd serve . --port 8080 --data data.json
 ```
 This will host all files in the current directory on `localhost:8080`.
-- Navigating to `http://localhost:8080/my_document.md.owo` will compile and serve you the styled HTML on the fly!
-- You can pass dynamic JSON variables via the URL query string: 
+- Navigating to `http://localhost:8080/my_document.md.owo` will dynamically compile and serve the styled HTML on the fly!
+- If you pass the `--data` flag, it will automatically inject your JSON file into every `.md.owo` file requested.
+- Navigating to `/` will automatically route to `/index.md.owo`.
+- You can also pass dynamic JSON variables via the URL query string (which overrides the file data): 
   `http://localhost:8080/my_document.md.owo?data={"name":"glitchy"}`
 
 ### Static File Compilation

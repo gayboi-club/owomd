@@ -591,6 +591,10 @@ class OwomdHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path
         
+        # Route / to index.md.owo automatically :3c
+        if path == '/' or path == '':
+            path = '/index.md.owo'
+            
         # Check if requesting a template :3
         if path.endswith('.md.owo'):
             # Translate path securely to local file system :3c
@@ -603,12 +607,24 @@ class OwomdHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             # Parse query parameters :3
             query_params = urllib.parse.parse_qs(parsed_url.query)
             placeholder_data = {}
+            
+            # Load from --data file natively if it exists :3
+            data_file = getattr(self.server, 'data_file', None)
+            if data_file and os.path.exists(data_file):
+                try:
+                    with open(data_file, 'r', encoding='utf-8') as df:
+                        placeholder_data = json.load(df)
+                except Exception as e:
+                    self.send_error(500, f"Error loading data file: {e} :3")
+                    return
+            
             if 'data' in query_params:
                 try:
-                    placeholder_data = json.loads(query_params['data'][0])
-                    if not isinstance(placeholder_data, dict):
+                    query_data = json.loads(query_params['data'][0])
+                    if not isinstance(query_data, dict):
                         self.send_error(400, "Bad Request: data must be a JSON object :3")
                         return
+                    placeholder_data.update(query_data)
                 except json.JSONDecodeError:
                     self.send_error(400, "Bad Request: Invalid JSON in data parameter :3")
                     return
@@ -632,15 +648,22 @@ class OwomdHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             # Fallback to serving normal static files :3
             super().do_GET()
 
-def start_server(directory, port):
+def start_server(directory, port, data_file=None):
     os.chdir(directory)
     handler = OwomdHTTPRequestHandler
     
-    # Allow port reuse so it doesn't crash on restart :3c
-    socketserver.TCPServer.allow_reuse_address = True
-    
-    with socketserver.TCPServer(("", port), handler) as httpd:
+    # Use ThreadingHTTPServer for concurrent production readiness! :3c
+    if hasattr(http.server, 'ThreadingHTTPServer'):
+        server_class = http.server.ThreadingHTTPServer
+    else:
+        server_class = socketserver.TCPServer
+        server_class.allow_reuse_address = True
+        
+    with server_class(("", port), handler) as httpd:
+        httpd.data_file = data_file
         print(f"Serving at http://localhost:{port} :3c")
+        if data_file:
+            print(f"Loaded JSON data from {data_file} :3")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
@@ -650,7 +673,7 @@ def main():
     if len(sys.argv) < 2:
         print("Usage:")
         print("  ./owomd <template_path> [--force-stdin-read]")
-        print("  ./owomd serve [directory] [--port 8000]")
+        print("  ./owomd serve [directory] [--port 8000] [--data data.json]")
         sys.exit(1)
         
     command = sys.argv[1]
@@ -658,6 +681,7 @@ def main():
     if command == "serve":
         directory = "."
         port = 8000
+        data_file = None
         
         # Parse serve args :3
         args = sys.argv[2:]
@@ -672,12 +696,20 @@ def main():
             except (ValueError, IndexError):
                 print("Error: Invalid port specified :3")
                 sys.exit(1)
+
+        if "--data" in args:
+            try:
+                idx = args.index("--data")
+                data_file = args[idx + 1]
+            except IndexError:
+                print("Error: No data file specified after --data :3")
+                sys.exit(1)
                 
         if not os.path.isdir(directory):
             print(f"Error: Directory not found: {directory} :3")
             sys.exit(1)
             
-        start_server(directory, port)
+        start_server(directory, port, data_file)
     else:
         # Standard file compilation mode :3c
         template_path = sys.argv[1]

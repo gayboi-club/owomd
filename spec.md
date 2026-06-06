@@ -6,7 +6,7 @@ A custom markdown format for gays, by [gays](https://gayboi.club/) :3c
 
 ## Architecture
 
-Python project compiling to a simple cross-platform binary.
+Rust project compiling to a simple cross-platform binary.
 
 ### Processing steps
 

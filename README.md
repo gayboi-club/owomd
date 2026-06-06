@@ -8,6 +8,8 @@ A custom markdown format for gays, by gays :3c
 
 Made with &lt;3 by [gayboi.club](https://gayboi.club)
 
+See our site at <https://owomd.gayboi.club/>!
+
 `owomd/python` is a python project that compiles custom `.md.owo` templates into beautiful, styled HTML files. It natively supports dynamic JSON placeholder injection, codeblock templating, and CSS remote imports :3
 
 ## Installation

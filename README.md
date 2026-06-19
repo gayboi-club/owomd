@@ -59,6 +59,12 @@ You can dynamically import styles like Google Fonts or Catppuccin, and define cu
 ```yaml
 $HEADER_BEGIN
 title: Meowing test :3c
+description: A cool site about things
+image: https://example.com/og.png
+url: https://example.com
+site_name: My Site
+align: center
+gradient_colors: ["#f472b6", "#8b5cf6", "#06b6d4"]
 css_imports:
   - "https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap"
   - "https://cdn.jsdelivr.net/npm/@catppuccin/palette@1.0.0/css/catppuccin.css"
@@ -69,6 +75,32 @@ custom_css: |
     color: var(--ctp-macchiato-text, #cad3f5);
   }
 $HEADER_END
+```
+
+Available metadata fields:
+- `title` — Page title & Open Graph title
+- `description` — SEO description & Open Graph description
+- `image` — Open Graph share image URL
+- `url` — Canonical URL for embeds
+- `site_name` — Site name for embeds
+- `align` — Page alignment: `center` (default), `left`, or `right`
+- `gradient_colors` — Colors for `==text==` gradient spans
+- `css_imports` — Remote stylesheet URLs
+- `custom_css` — Inline CSS rules
+
+### Gradient Text
+Use `==text==` to make text render as a gradient. Set the colors in the header with `gradient_colors`:
+```yaml
+gradient_colors: ["#f472b6", "#8b5cf6", "#06b6d4"]
+```
+```markdown
+This is ==gradient text== right here!
+```
+
+### Page Alignment
+Control page layout with the `align` header field — `center` (default), `left`, or `right`:
+```yaml
+align: right
 ```
 
 ### Escapes & Unicode

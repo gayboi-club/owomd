@@ -199,105 +199,108 @@ def parse_blocks(lines, start_line_num=1):
 
     return grouped
 
-def parse_inline(text, line_num):
-    nodes = []
-    i = 0
-    current_text = ""
-    
-    def flush_text():
-        nonlocal current_text
-        if current_text:
-            nodes.append(('text', current_text))
-            current_text = ""
-
-    while i < len(text):
-        if text[i] == '\\':
-            if i + 1 >= len(text):
-                current_text += '\\'
-                i += 1
-                break
-            nxt = text[i+1]
-            if nxt == 'u':
-                if i + 2 < len(text) and text[i+2] == '{':
-                    end = text.find('}', i + 3)
-                    if end != -1:
-                        hex_str = text[i+3:end]
-                        try:
-                            val = int(hex_str, 16)
-                            if val > 0x10FFFF:
-                                raise OwomdError(f"Escape value too large: {hex_str}")
-                            current_text += chr(val)
-                            i = end + 1
-                            continue
-                        except ValueError:
-                            pass
-                if i + 5 < len(text):
-                    hex_str = text[i+2:i+6]
-                    try:
-                        val = int(hex_str, 16)
-                        current_text += chr(val)
-                        i += 6
-                        continue
-                    except ValueError:
-                        pass
-            elif nxt == 'x':
-                if i + 3 < len(text):
-                    hex_str = text[i+2:i+4]
-                    try:
-                        val = int(hex_str, 16)
-                        current_text += chr(val)
-                        i += 4
-                        continue
-                    except ValueError:
-                        pass
-            current_text += nxt
-            i += 2
-            continue
-            
-        elif text.startswith('${', i):
-            end = text.find('}', i + 2)
-            if end != -1:
-                flush_text()
-                path = text[i+2:end].strip()
 def parse_inline(text, line_num=0):
-    pattern = re.compile(r'(!\[.*?\]\(.*?\))|(\[.*?\]\(.*?\))|(<(?:http|https|ftp)://[^>]+>)|(<\/?[a-zA-Z][^>]*>)|(\*\*.*?\*\*)|(\*.*?\*)|(_.*?_)|(`.*?`)')
+    pattern = re.compile(
+        r'(!\[.*?\]\(.*?\))|'
+        r'(\[.*?\]\(.*?\))|'
+        r'(<https?://[^>]+>)|'
+        r'(<\/?[a-zA-Z][^>]*>)|'
+        r'(\*\*.*?\*\*)|'
+        r'(\*.*?\*)|'
+        r'(_.*?_)|'
+        r'(==.*?==)|'
+        r'(`.*?`)'
+    )
     
     nodes = []
     idx = 0
     while idx < len(text):
-        m = pattern.search(text, idx)
-        if not m:
-            nodes.append(('text', text[idx:]))
-            break
-        if m.start() > idx:
-            nodes.append(('text', text[idx:m.start()]))
-            
-        match_str = m.group(0)
-        if match_str.startswith('![') and match_str.endswith(')'):
-            alt = match_str[2:match_str.find(']')]
-            url = match_str[match_str.find('(')+1:-1]
-            nodes.append(('image', alt, url))
-        elif match_str.startswith('[') and match_str.endswith(')'):
-            alt = match_str[1:match_str.find(']')]
-            url = match_str[match_str.find('(')+1:-1]
-            nodes.append(('link', alt, url))
-        elif match_str.startswith('<') and '://' in match_str and ' ' not in match_str:
-            url = match_str[1:-1]
-            nodes.append(('link', url, url))
-        elif match_str.startswith('<'):
-            nodes.append(('raw_html', match_str))
-        elif match_str.startswith('**'):
-            nodes.append(('bold', match_str[2:-2]))
-        elif match_str.startswith('*'):
-            nodes.append(('italic', match_str[1:-1]))
-        elif match_str.startswith('_'):
-            nodes.append(('italic', match_str[1:-1]))
-        elif match_str.startswith('`'):
-            nodes.append(('code', match_str[1:-1]))
-            
-        idx = m.end()
+        # Handle escape sequences :3
+        if text[idx] == '\\' and idx + 1 < len(text):
+            nxt = text[idx+1]
+            if nxt == 'u':
+                if idx + 2 < len(text) and text[idx+2] == '{':
+                    end = text.find('}', idx + 3)
+                    if end != -1:
+                        hex_str = text[idx+3:end]
+                        try:
+                            val = int(hex_str, 16)
+                            if val > 0x10FFFF:
+                                raise OwomdError(f"Escape value too large: {hex_str}")
+                            nodes.append(('text', chr(val)))
+                            idx = end + 1
+                            continue
+                        except ValueError:
+                            pass
+                if idx + 5 < len(text):
+                    hex_str = text[idx+2:idx+6]
+                    try:
+                        val = int(hex_str, 16)
+                        nodes.append(('text', chr(val)))
+                        idx += 6
+                        continue
+                    except ValueError:
+                        pass
+            elif nxt == 'x':
+                if idx + 3 < len(text):
+                    hex_str = text[idx+2:idx+4]
+                    try:
+                        val = int(hex_str, 16)
+                        nodes.append(('text', chr(val)))
+                        idx += 4
+                        continue
+                    except ValueError:
+                        pass
+            elif nxt == '$':
+                nodes.append(('text', '$'))
+                idx += 2
+                continue
+            nodes.append(('text', nxt))
+            idx += 2
+            continue
 
-    # Process placeholders in the text and raw_html nodes
+        # Try regex patterns anchored at current position :3c
+        m = pattern.match(text, idx)
+        if m:
+            match_str = m.group(0)
+            if match_str.startswith('![') and match_str.endswith(')'):
+                alt = match_str[2:match_str.find(']')]
+                url = match_str[match_str.find('(')+1:-1]
+                nodes.append(('image', alt, url))
+            elif match_str.startswith('[') and match_str.endswith(')'):
+                alt = match_str[1:match_str.find(']')]
+                url = match_str[match_str.find('(')+1:-1]
+                nodes.append(('link', alt, url))
+            elif match_str.startswith('<') and match_str[1:2] in 'hH':
+                url = match_str[1:-1]
+                nodes.append(('link', url, url))
+            elif match_str.startswith('<'):
+                nodes.append(('raw_html', match_str))
+            elif match_str.startswith('**'):
+                nodes.append(('bold', match_str[2:-2]))
+            elif match_str.startswith('*'):
+                nodes.append(('italic', match_str[1:-1]))
+            elif match_str.startswith('_'):
+                nodes.append(('underline', match_str[1:-1]))
+            elif match_str.startswith('==') and match_str.endswith('=='):
+                nodes.append(('gradient', match_str[2:-2]))
+            elif match_str.startswith('`'):
+                nodes.append(('code', match_str[1:-1]))
+            idx = m.end()
+            continue
+
+        # Scan ahead for the next escape or pattern match :3
+        next_idx = idx + 1
+        while next_idx < len(text):
+            if text[next_idx] == '\\':
+                break
+            if pattern.match(text, next_idx):
+                break
+            next_idx += 1
+        nodes.append(('text', text[idx:next_idx]))
+        idx = next_idx
+
+    # Process placeholders in the text and raw_html nodes :3c
     final_nodes = []
     for node in nodes:
         if node[0] in ('text', 'raw_html'):
@@ -307,16 +310,15 @@ def parse_inline(text, line_num=0):
                 if s == -1: break
                 e = t.find('}', s)
                 if e == -1: break
-                
                 if s > 0:
                     final_nodes.append((node[0], t[:s]))
                 final_nodes.append(('placeholder', t[s+2:e].strip(), line_num))
                 t = t[e+1:]
-            if len(t) > 0:
+            if t:
                 final_nodes.append((node[0], t))
         else:
             final_nodes.append(node)
-            
+
     return final_nodes
 
 def render_inline(text, context, line_num):
@@ -335,6 +337,8 @@ def render_inline(text, context, line_num):
             res += f"<em>{render_inline(node[1], context, line_num)}</em>"
         elif t == 'underline':
             res += f"<u>{render_inline(node[1], context, line_num)}</u>"
+        elif t == 'gradient':
+            res += f'<span class="owomd-gradient">{render_inline(node[1], context, line_num)}</span>'
         elif t == 'code':
             res += f"<code>{html.escape(node[1])}</code>"
         elif t == 'link':
@@ -493,95 +497,139 @@ def process_document(text, placeholder_data):
     blocks = parse_blocks(lines)
     html_output = render_blocks(blocks, placeholder_data)
     
+    title = metadata.get('title', '')
+    description = metadata.get('description', '')
+    image = metadata.get('image', '')
+    site_url = metadata.get('url', '')
+    site_name = metadata.get('site_name', '')
+    align = metadata.get('align', 'center')
+    gradient_colors = metadata.get('gradient_colors', [])
+
     css_imports = metadata.get('css_imports', [])
     if isinstance(css_imports, str):
         css_imports = [css_imports]
-        
+
     custom_css = metadata.get('custom_css', '')
-    
+
+    # Build head tags :3c
+    head_tags = ""
+    if title:
+        head_tags += f'    <title>{html.escape(title)}</title>\n'
+        head_tags += f'    <meta property="og:title" content="{html.escape(title)}">\n'
+    if description:
+        head_tags += f'    <meta name="description" content="{html.escape(description)}">\n'
+        head_tags += f'    <meta property="og:description" content="{html.escape(description)}">\n'
+    if image:
+        head_tags += f'    <meta property="og:image" content="{html.escape(image)}">\n'
+        head_tags += '    <meta name="twitter:card" content="summary_large_image">\n'
+    if site_url:
+        head_tags += f'    <meta property="og:url" content="{html.escape(site_url)}">\n'
+    if site_name:
+        head_tags += f'    <meta property="og:site_name" content="{html.escape(site_name)}">\n'
+
     css_links_html = ""
     for imp in css_imports:
         css_links_html += f'    <link rel="stylesheet" href="{html.escape(imp)}">\n'
-        
+
     custom_css_html = ""
     if custom_css:
         custom_css_html = f'    <style>\n{custom_css}\n    </style>\n'
 
-    BASE_CSS = """    <style>
-        body {
+    gradient_css = ""
+    if gradient_colors:
+        colors = ", ".join(gradient_colors)
+        gradient_css = (
+            '    <style>\n'
+            f'        .owomd-gradient {{\n'
+            f'            background: linear-gradient(135deg, {colors});\n'
+            f'            -webkit-background-clip: text;\n'
+            f'            background-clip: text;\n'
+            f'            color: transparent;\n'
+            f'            display: inline;\n'
+            f'        }}\n'
+            '    </style>\n'
+        )
+
+    if align not in ('center', 'left', 'right'):
+        align = 'center'
+
+    BASE_CSS = f"""    <style>
+        body {{
             max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
             line-height: 1.6;
-        }
-        img {
+        }}
+        body.align-left {{ margin: 0; }}
+        body.align-right {{ margin: 0 0 0 auto; }}
+        img {{
             max-width: 100%;
             height: auto;
             border-radius: 8px;
-        }
-        pre {
+        }}
+        pre {{
             padding: 1rem;
             border-radius: 8px;
             overflow-x: auto;
-        }
-        blockquote {
+        }}
+        blockquote {{
             border-left: 4px solid currentColor;
             padding-left: 1rem;
             margin-left: 0;
             opacity: 0.9;
-        }
+        }}
         /* Alerts */
-        .owomd-alert {
+        .owomd-alert {{
             margin: 1.5rem 0;
             padding: 1rem;
             border-radius: 12px;
             border: 2px solid;
             border-left-width: 6px;
-        }
-        .owomd-alert-title {
+        }}
+        .owomd-alert-title {{
             font-weight: bold;
             margin-bottom: 0.5rem;
             font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-        }
-        .owomd-alert-content > *:first-child { margin-top: 0; }
-        .owomd-alert-content > *:last-child { margin-bottom: 0; }
-        
-        .owomd-alert-note { border-color: #a78bfa; background-color: rgba(167, 139, 250, 0.1); }
-        .owomd-alert-note .owomd-alert-title { color: #a78bfa; }
-        
-        .owomd-alert-tip { border-color: #34d399; background-color: rgba(52, 211, 153, 0.1); }
-        .owomd-alert-tip .owomd-alert-title { color: #34d399; }
-        
-        .owomd-alert-important { border-color: #f472b6; background-color: rgba(244, 114, 182, 0.1); }
-        .owomd-alert-important .owomd-alert-title { color: #f472b6; }
-        
-        .owomd-alert-warning { border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.1); }
-        .owomd-alert-warning .owomd-alert-title { color: #fbbf24; }
-        
-        .owomd-alert-caution { border-color: #f87171; background-color: rgba(248, 113, 113, 0.1); }
-        .owomd-alert-caution .owomd-alert-title { color: #f87171; }
+        }}
+        .owomd-alert-content > *:first-child {{ margin-top: 0; }}
+        .owomd-alert-content > *:last-child {{ margin-bottom: 0; }}
+
+        .owomd-alert-note {{ border-color: #a78bfa; background-color: rgba(167, 139, 250, 0.1); }}
+        .owomd-alert-note .owomd-alert-title {{ color: #a78bfa; }}
+
+        .owomd-alert-tip {{ border-color: #34d399; background-color: rgba(52, 211, 153, 0.1); }}
+        .owomd-alert-tip .owomd-alert-title {{ color: #34d399; }}
+
+        .owomd-alert-important {{ border-color: #f472b6; background-color: rgba(244, 114, 182, 0.1); }}
+        .owomd-alert-important .owomd-alert-title {{ color: #f472b6; }}
+
+        .owomd-alert-warning {{ border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.1); }}
+        .owomd-alert-warning .owomd-alert-title {{ color: #fbbf24; }}
+
+        .owomd-alert-caution {{ border-color: #f87171; background-color: rgba(248, 113, 113, 0.1); }}
+        .owomd-alert-caution .owomd-alert-title {{ color: #f87171; }}
 
         /* Aesthetic defaults in case theme is missing something :3 */
-        :root {
+        :root {{
             color-scheme: dark light;
-        }
+        }}
     </style>"""
 
     final_html = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-{css_links_html}{custom_css_html}{BASE_CSS}
+{head_tags}{css_links_html}{custom_css_html}{gradient_css}{BASE_CSS}
 </head>
-<body class="owomd-content">
+<body class="owomd-content align-{align}">
 {html_output}</body>
 </html>"""
-    
+
     if '\x00' in final_html:
         raise OwomdError("Null byte found in input.")
-        
+
     return final_html
 
 # Server mode implementation :3c
@@ -718,6 +766,9 @@ def main():
         if not os.path.exists(template_path):
             print(f"Error: Template file not found: {template_path} :3")
             sys.exit(1)
+
+        sys.stdin = os.fdopen(sys.stdin.fileno(), 'r', encoding='utf-8', closefd=False)
+        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', encoding='utf-8', closefd=False)
             
         with open(template_path, 'r', encoding='utf-8') as f:
             template_text = f.read()
@@ -738,7 +789,7 @@ def main():
             
         try:
             output = process_document(template_text, placeholder_data)
-            print(output)
+            sys.stdout.write(output)
         except OwomdError as e:
             print(f"! {e}")
             sys.exit(1)

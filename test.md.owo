@@ -1,5 +1,11 @@
 $HEADER_BEGIN
 title: Meowing test :3c
+description: A demo page for owomd features
+image: https://example.com/og.png
+url: https://example.com
+site_name: owomd
+align: center
+gradient_colors: ["#f472b6", "#8b5cf6", "#06b6d4"]
 css_imports:
   - "https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap"
   - "https://cdn.jsdelivr.net/npm/@catppuccin/palette@1.0.0/css/catppuccin.css"
@@ -20,9 +26,13 @@ $HEADER_END
 
 - So yeah, this text, $HEADER_END, is treated as literal
 
-\u2122
-\u{1f431}
-\xe4
+\u2122 \u{1f431} \xe4
+
+==gradient text demo==
+
+_underline_ and *italic* and **bold**
+
+\${literal} and \\${placeholder} test
 
 ```rs
 fn main() -> i32 {

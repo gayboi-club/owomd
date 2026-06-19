@@ -77,6 +77,38 @@ title: Edge case example
 $HEADER_END
 ```
 
+### Supported metadata fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | String | Page title, used for `<title>` and `og:title` |
+| `description` | String | Page description, used for `<meta name="description">` and `og:description` |
+| `image` | String | Open Graph image URL, used for `og:image` and `twitter:card` |
+| `url` | String | Canonical URL, used for `og:url` |
+| `site_name` | String | Site name, used for `og:site_name` |
+| `align` | String | Page alignment: `center` (default), `left`, or `right` |
+| `gradient_colors` | List of Strings | Colors for `==text==` gradient spans, e.g. `["#f472b6", "#8b5cf6"]` |
+| `css_imports` | List of Strings | Remote stylesheets to import |
+| `custom_css` | String | Inline CSS to inject |
+
+Example with all fields:
+
+```
+$HEADER_BEGIN
+title: My Awesome Page
+description: A cool site about things
+image: https://example.com/og.png
+url: https://example.com
+site_name: My Site
+align: center
+gradient_colors: ["#f472b6", "#8b5cf6", "#06b6d4"]
+css_imports:
+  - "https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap"
+custom_css: |
+  body { font-family: 'Outfit', sans-serif; }
+$HEADER_END
+```
+
 ---
 
 ## The format
@@ -155,6 +187,7 @@ This is an invalid header, but it should be treated as literally `##Test`.
 | `*italics*` | *italics* |
 | `**bold**` | **bold** |
 | `_underline_` | underline |
+| `==gradient==` | gradient text (requires `gradient_colors` in header) |
 | `` `inline codeblock` `` | `inline codeblock` |
 
 > [!NOTE]
@@ -166,6 +199,18 @@ For example, this gets rendered literally:
 *stuff
 *
 ```
+
+### Gradient text
+
+Requires `gradient_colors` to be defined in the [Metadata Header](#metadata-header). Any text wrapped in `==` will be rendered with a gradient.
+
+```
+This is ==gradient text== right here!
+```
+
+### Page alignment
+
+Page alignment is controlled via the `align` field in the [Metadata Header](#metadata-header). Acceptable values are `center` (default), `left`, and `right`.
 
 ### Code blocks
 

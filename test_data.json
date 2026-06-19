@@ -1,0 +1,15 @@
+{
+  "subject": "owomd",
+  "features": [
+    {"title": "Metadata Header", "desc": "YAML-based header for title, description, OG tags, CSS imports, alignment, and gradient colors."},
+    {"title": "Unicode Escapes", "desc": "Supports \\uXXXX, \\u{X+}, and \\xNN escape sequences anywhere in text."},
+    {"title": "Gradient Text", "desc": "Use ==text== syntax with configurable gradient_colors in the header."},
+    {"title": "Formatting", "desc": "Bold, italic, underline, inline code, links, images — full markdown style."},
+    {"title": "Code Blocks", "desc": "Syntax-highlighted blocks with optional +templating mode for placeholder injection."},
+    {"title": "Alerts", "desc": "GitHub-style NOTE, TIP, IMPORTANT, WARNING, and CAUTION blockquotes."},
+    {"title": "Iterators", "desc": "Loop over arrays with $iterate list as var{ ... } syntax, supports nesting."},
+    {"title": "Placeholders", "desc": "Inject JSON data via stdin with ${path.to.value} syntax."},
+    {"title": "Open Graph", "desc": "Automatic og:title, og:description, og:image, og:url, og:site_name, twitter:card."},
+    {"title": "Alignment", "desc": "Control page layout with align: center (default), left, or right."}
+  ]
+}

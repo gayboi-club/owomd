@@ -5,4 +5,6 @@ __pycache__/
 *.spec
 *.owo
 !test.md.owo
+test_site.html
+catppuccin.html
 .DS_Store

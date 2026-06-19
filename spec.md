@@ -88,6 +88,7 @@ $HEADER_END
 | `site_name` | String | Site name, used for `og:site_name` |
 | `align` | String | Page alignment: `center` (default), `left`, or `right` |
 | `gradient_colors` | List of Strings | Colors for `==text==` gradient spans, e.g. `["#f472b6", "#8b5cf6"]` |
+| `gradients` | Map of String → List of Strings | Named gradients for `==name:text==` syntax, e.g. `{ "pride": ["#ff0000", "#ff8800"], "ocean": ["#06b6d4", "#3b82f6"] }` |
 | `css_imports` | List of Strings | Remote stylesheets to import |
 | `custom_css` | String | Inline CSS to inject |
 
@@ -102,6 +103,8 @@ url: https://example.com
 site_name: My Site
 align: center
 gradient_colors: ["#f472b6", "#8b5cf6", "#06b6d4"]
+gradients:
+  pride: ["#ff0000", "#ff8800", "#ffff00", "#00ff00", "#0088ff", "#8800ff"]
 css_imports:
   - "https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap"
 custom_css: |
@@ -202,15 +205,40 @@ For example, this gets rendered literally:
 
 ### Gradient text
 
-Requires `gradient_colors` to be defined in the [Metadata Header](#metadata-header). Any text wrapped in `==` will be rendered with a gradient.
+Requires `gradient_colors` or `gradients` to be defined in the [Metadata Header](#metadata-header). Any text wrapped in `==` will be rendered with a gradient.
 
 ```
 This is ==gradient text== right here!
 ```
 
+Multiple named gradients are supported via the `gradients` field. Use `==name:text==` to apply a specific gradient:
+
+```
+==pride:This uses the pride gradient==
+==default:This uses the default gradient==
+```
+
+If only `gradient_colors` is set, it becomes the `default` gradient. If both `gradient_colors` and `gradients.default` are set, the explicit `gradients.default` takes precedence.
+
+Backwards compatibility is maintained — existing `==text==` syntax uses the `default` gradient.
+
 ### Page alignment
 
 Page alignment is controlled via the `align` field in the [Metadata Header](#metadata-header). Acceptable values are `center` (default), `left`, and `right`.
+
+Per-element alignment can be set inline using the `$align:` directive. This controls the `text-align` CSS property for all subsequent blocks until changed:
+
+```
+$align: center
+This paragraph and everything after it will be centered.
+
+$align: right
+Now text is right-aligned, including:
+
+## This header
+```
+
+The directive persists across blockquotes, alerts, and iterators. The initial alignment inherits from the page CSS (typically `left`).
 
 ### Code blocks
 

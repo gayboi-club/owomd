@@ -72,6 +72,13 @@ def parse_blocks(lines, start_line_num=1):
         line = lines[i]
         line_num = start_line_num + i
 
+        # Alignment directive :3
+        m = re.match(r'^\$align:\s*(center|left|right)$', line)
+        if m:
+            blocks.append(('align_directive', m.group(1)))
+            i += 1
+            continue
+
         # Iterator :3
         m = re.match(r'^\$iterate\s+([a-zA-Z0-9_\.]+)\s+as\s+([a-zA-Z0-9_]+)\s*\{$', line)
         if m:
@@ -283,7 +290,15 @@ def parse_inline(text, line_num=0):
             elif match_str.startswith('_'):
                 nodes.append(('underline', match_str[1:-1]))
             elif match_str.startswith('==') and match_str.endswith('=='):
-                nodes.append(('gradient', match_str[2:-2]))
+                inner = match_str[2:-2]
+                if ':' in inner:
+                    gname, _, gtext = inner.partition(':')
+                    if gname:
+                        nodes.append(('gradient', gtext, gname))
+                    else:
+                        nodes.append(('gradient', inner))
+                else:
+                    nodes.append(('gradient', inner))
             elif match_str.startswith('`'):
                 nodes.append(('code', match_str[1:-1]))
             idx = m.end()
@@ -338,7 +353,11 @@ def render_inline(text, context, line_num):
         elif t == 'underline':
             res += f"<u>{render_inline(node[1], context, line_num)}</u>"
         elif t == 'gradient':
-            res += f'<span class="owomd-gradient">{render_inline(node[1], context, line_num)}</span>'
+            if len(node) > 2:
+                cls = f'owomd-gradient-{html.escape(node[2])}'
+            else:
+                cls = 'owomd-gradient'
+            res += f'<span class="{cls}">{render_inline(node[1], context, line_num)}</span>'
         elif t == 'code':
             res += f"<code>{html.escape(node[1])}</code>"
         elif t == 'link':
@@ -349,18 +368,24 @@ def render_inline(text, context, line_num):
             res += node[1]
     return res
 
-def render_blocks(blocks, context):
+def render_blocks(blocks, context, current_align='inherit'):
     out = ""
     for block in blocks:
         btype = block[0]
+        if btype == 'align_directive':
+            current_align = block[1]
+            continue
+
+        align_attr = f' class="text-align-{current_align}"' if current_align != 'inherit' else ''
+
         if btype == 'header':
             _, level, text, line_num = block
             rendered = render_inline(text, context, line_num)
-            out += f"<h{level}>{rendered}</h{level}>\n"
+            out += f"<h{level}{align_attr}>{rendered}</h{level}>\n"
         elif btype == 'paragraph':
             _, text, line_num = block
             rendered = render_inline(text, context, line_num)
-            out += f"<p>{rendered}</p>\n"
+            out += f"<p{align_attr}>{rendered}</p>\n"
         elif btype == 'codeblock':
             _, lang, templating, lines, line_num = block
             code_out = ""
@@ -379,12 +404,12 @@ def render_blocks(blocks, context):
                     code_out += html.escape(line) + "\n"
                     
             if lang:
-                out += f"<pre><code class=\"language-{lang}\">\n{code_out}</code></pre>\n"
+                out += f"<pre{align_attr}><code class=\"language-{lang}\">\n{code_out}</code></pre>\n"
             else:
-                out += f"<pre><code>\n{code_out}</code></pre>\n"
+                out += f"<pre{align_attr}><code>\n{code_out}</code></pre>\n"
         elif btype == 'quote':
             _, quote_blocks = block
-            out += f"<blockquote>\n{render_blocks(quote_blocks, context)}</blockquote>\n"
+            out += f"<blockquote{align_attr}>\n{render_blocks(quote_blocks, context, current_align)}</blockquote>\n"
         elif btype == 'alert':
             _, alert_type, alert_blocks = block
             titles = {
@@ -395,22 +420,25 @@ def render_blocks(blocks, context):
                 'caution': 'Caution'
             }
             title = titles.get(alert_type, 'Alert')
-            out += f'<div class="owomd-alert owomd-alert-{alert_type}">\n'
+            alert_cls = f'owomd-alert owomd-alert-{alert_type}'
+            if current_align != 'inherit':
+                alert_cls += f' text-align-{current_align}'
+            out += f'<div class="{alert_cls}">\n'
             out += f'  <div class="owomd-alert-title">{title}</div>\n'
             out += f'  <div class="owomd-alert-content">\n'
-            out += render_blocks(alert_blocks, context)
+            out += render_blocks(alert_blocks, context, current_align)
             out += f'  </div>\n'
             out += f'</div>\n'
         elif btype == 'ul':
             _, items = block
-            out += "<ul>\n"
+            out += f"<ul{align_attr}>\n"
             for item in items:
                 _, text, line_num = item
                 out += f"<li>{render_inline(text, context, line_num)}</li>\n"
             out += "</ul>\n"
         elif btype == 'ol':
             _, items = block
-            out += "<ol>\n"
+            out += f"<ol{align_attr}>\n"
             for item in items:
                 _, text, line_num = item
                 out += f"<li>{render_inline(text, context, line_num)}</li>\n"
@@ -423,7 +451,7 @@ def render_blocks(blocks, context):
             for item in iterable:
                 new_context = context.copy()
                 new_context[var_name] = item
-                out += render_blocks(iter_blocks, new_context)
+                out += render_blocks(iter_blocks, new_context, current_align)
     return out
 
 def parse_inline_code(text, line_num):
@@ -504,6 +532,7 @@ def process_document(text, placeholder_data):
     site_name = metadata.get('site_name', '')
     align = metadata.get('align', 'center')
     gradient_colors = metadata.get('gradient_colors', [])
+    gradients = metadata.get('gradients', {})
 
     css_imports = metadata.get('css_imports', [])
     if isinstance(css_imports, str):
@@ -536,19 +565,27 @@ def process_document(text, placeholder_data):
         custom_css_html = f'    <style>\n{custom_css}\n    </style>\n'
 
     gradient_css = ""
+    all_gradients = {}
     if gradient_colors:
-        colors = ", ".join(gradient_colors)
-        gradient_css = (
-            '    <style>\n'
-            f'        .owomd-gradient {{\n'
-            f'            background: linear-gradient(135deg, {colors});\n'
-            f'            -webkit-background-clip: text;\n'
-            f'            background-clip: text;\n'
-            f'            color: transparent;\n'
-            f'            display: inline;\n'
-            f'        }}\n'
-            '    </style>\n'
-        )
+        all_gradients['default'] = gradient_colors
+    if gradients:
+        all_gradients.update(gradients)
+
+    if all_gradients:
+        gradient_css = '    <style>\n'
+        for name, colors_list in all_gradients.items():
+            colors = ", ".join(colors_list)
+            cls = 'owomd-gradient' if name == 'default' else f'owomd-gradient-{name}'
+            gradient_css += (
+                f'        .{cls} {{\n'
+                f'            background: linear-gradient(135deg, {colors});\n'
+                f'            -webkit-background-clip: text;\n'
+                f'            background-clip: text;\n'
+                f'            color: transparent;\n'
+                f'            display: inline;\n'
+                f'        }}\n'
+            )
+        gradient_css += '    </style>\n'
 
     if align not in ('center', 'left', 'right'):
         align = 'center'
@@ -569,6 +606,9 @@ def process_document(text, placeholder_data):
         }}
         body.align-left {{ margin: 0; }}
         body.align-right {{ margin: 0 0 0 auto; }}
+        .text-align-left {{ text-align: left; }}
+        .text-align-center {{ text-align: center; }}
+        .text-align-right {{ text-align: right; }}
         img {{
             max-width: 100%;
             height: auto;

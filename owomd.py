@@ -342,9 +342,9 @@ def render_inline(text, context, line_num):
         elif t == 'code':
             res += f"<code>{html.escape(node[1])}</code>"
         elif t == 'link':
-            res += f"<a href=\"{html.escape(node[2])}\">{render_inline(node[1], context, line_num)}</a>"
+            res += f"<a href=\"{html.escape(render_inline(node[2], context, line_num))}\">{render_inline(node[1], context, line_num)}</a>"
         elif t == 'image':
-            res += f"<img src=\"{html.escape(node[2])}\" alt=\"{html.escape(node[1])}\" />"
+            res += f"<img src=\"{html.escape(render_inline(node[2], context, line_num))}\" alt=\"{html.escape(render_inline(node[1], context, line_num))}\" />"
         elif t == 'raw_html':
             res += node[1]
     return res
@@ -554,11 +554,18 @@ def process_document(text, placeholder_data):
         align = 'center'
 
     BASE_CSS = f"""    <style>
+        html {{
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }}
         body {{
             max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
             line-height: 1.6;
+            font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }}
         body.align-left {{ margin: 0; }}
         body.align-right {{ margin: 0 0 0 auto; }}
@@ -571,12 +578,22 @@ def process_document(text, placeholder_data):
             padding: 1rem;
             border-radius: 8px;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }}
+        code {{
+            word-break: break-word;
         }}
         blockquote {{
             border-left: 4px solid currentColor;
             padding-left: 1rem;
             margin-left: 0;
             opacity: 0.9;
+        }}
+        table {{
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-width: 100%;
         }}
         /* Alerts */
         .owomd-alert {{
@@ -615,12 +632,37 @@ def process_document(text, placeholder_data):
         :root {{
             color-scheme: dark light;
         }}
+
+        /* Responsive: mobile adjustments */
+        @media (max-width: 600px) {{
+            body {{
+                padding: 1rem;
+                font-size: 1rem;
+            }}
+            .owomd-alert {{
+                padding: 0.75rem;
+                margin: 1rem 0;
+            }}
+            pre {{
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }}
+            h1 {{ font-size: 1.75rem; }}
+            h2 {{ font-size: 1.4rem; }}
+            h3 {{ font-size: 1.15rem; }}
+        }}
+        @media (max-width: 400px) {{
+            body {{
+                padding: 0.75rem;
+            }}
+        }}
     </style>"""
 
     final_html = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 {head_tags}{css_links_html}{custom_css_html}{gradient_css}{BASE_CSS}
 </head>
 <body class="owomd-content align-{align}">
